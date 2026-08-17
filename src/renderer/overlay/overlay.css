@@ -31,23 +31,24 @@ body {
 }
 #lyrics {
   flex: 1;
-  overflow-y: auto;
-  scrollbar-width: none;
+  overflow: hidden;
   font-size: var(--font-size, 18px);
-  line-height: 1.5;
+  line-height: 1.45;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
 }
-#lyrics::-webkit-scrollbar { display: none; }
 .line {
-  opacity: 0.35;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, font-size 0.3s ease;
   padding: 2px 0;
+  white-space: pre-wrap;
 }
-.line.active {
-  opacity: 1;
-  font-weight: 600;
-  transform: scale(1.03);
-}
+/* Windowed karaoke view: only 5 lines shown, active in the middle */
+.line.far    { opacity: 0.20; font-size: 0.75em; }
+.line.near   { opacity: 0.45; font-size: 0.85em; }
+.line.active { opacity: 1;    font-weight: 700;  transform: scale(1.04); }
 
 #controls {
   position: absolute;
@@ -75,15 +76,18 @@ body:hover #controls { opacity: 0.85; }
   position: absolute;
   top: 30px;
   right: 8px;
-  background: rgba(20,20,20,0.92);
+  background: rgba(15,15,15,0.98);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
   -webkit-app-region: no-drag;
-  min-width: 180px;
+  min-width: 220px;
+  z-index: 10;
 }
 #panel.open { display: flex; }
 #panel label {

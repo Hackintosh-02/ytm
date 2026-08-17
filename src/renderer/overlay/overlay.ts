@@ -44,8 +44,11 @@ const offsetReadout = document.getElementById('offset-readout') as HTMLElement;
 let current: ROverlayLyrics = { track: null, synced: null, plain: null, status: 'idle' };
 let currentTime = 0;
 let offset = 0;
-let lineEls: HTMLDivElement[] = [];
 let activeIdx = -1;
+
+// How many lines to show above and below the active line.
+const WINDOW_BEFORE = 2;
+const WINDOW_AFTER = 2;
 
 function applySettings(s: ROverlaySettings) {
   document.body.style.setProperty('--font-size', `${s.fontSize}px`);
@@ -57,31 +60,38 @@ function applySettings(s: ROverlaySettings) {
   offsetReadout.textContent = `${s.offset >= 0 ? '+' : ''}${s.offset.toFixed(1)}s`;
 }
 
-function render() {
-  lyricsEl.innerHTML = '';
-  lineEls = [];
-  activeIdx = -1;
-
-  if (current.status === 'idle') {
-    statusEl.textContent = 'Waiting for a song…';
-    return;
-  }
+function setHeader() {
   const t = current.track;
   const header = t ? `${t.title} — ${t.artist}` : '';
   statusEl.textContent =
+    current.status === 'idle' ? 'Waiting for a song…' :
     current.status === 'loading' ? `${header}   ·   loading lyrics…` :
     current.status === 'not-found' ? `${header}   ·   no lyrics found` :
     header;
+}
+
+function renderWindow() {
+  lyricsEl.innerHTML = '';
+  if (current.status === 'idle') return;
 
   if (current.synced && current.synced.length) {
-    for (const line of current.synced) {
+    const total = current.synced.length;
+    const center = activeIdx >= 0 ? activeIdx : 0;
+    const start = Math.max(0, center - WINDOW_BEFORE);
+    const end = Math.min(total - 1, center + WINDOW_AFTER);
+    for (let i = start; i <= end; i++) {
+      const line = current.synced[i];
       const div = document.createElement('div');
-      div.className = 'line';
+      const distance = Math.abs(i - center);
+      const cls = i === center ? 'active' : distance === 1 ? 'near' : 'far';
+      div.className = `line ${cls}`;
       div.textContent = line.text || '♪';
       lyricsEl.appendChild(div);
-      lineEls.push(div);
     }
   } else if (current.plain) {
+    // No synced lyrics: show all plain lines, all "active", scrollable.
+    lyricsEl.style.overflowY = 'auto';
+    lyricsEl.style.justifyContent = 'flex-start';
     for (const raw of current.plain.split(/\r?\n/)) {
       const div = document.createElement('div');
       div.className = 'line active';
@@ -89,6 +99,14 @@ function render() {
       lyricsEl.appendChild(div);
     }
   }
+}
+
+function render() {
+  activeIdx = -1;
+  lyricsEl.style.overflowY = 'hidden';
+  lyricsEl.style.justifyContent = 'center';
+  setHeader();
+  renderWindow();
 }
 
 function findActiveIndex(lines: RSyncedLine[], t: number): number {
@@ -102,17 +120,11 @@ function findActiveIndex(lines: RSyncedLine[], t: number): number {
 }
 
 function syncHighlight() {
-  if (!current.synced || !current.synced.length || !lineEls.length) return;
+  if (!current.synced || !current.synced.length) return;
   const idx = findActiveIndex(current.synced, currentTime - offset);
   if (idx === activeIdx) return;
-  if (activeIdx >= 0 && lineEls[activeIdx]) lineEls[activeIdx].classList.remove('active');
   activeIdx = idx;
-  if (idx >= 0 && lineEls[idx]) {
-    const target = lineEls[idx];
-    target.classList.add('active');
-    const offsetY = target.offsetTop - lyricsEl.clientHeight / 2 + target.clientHeight / 2;
-    lyricsEl.scrollTo({ top: Math.max(0, offsetY), behavior: 'smooth' });
-  }
+  renderWindow();
 }
 
 btnSettings.addEventListener('click', () => panel.classList.toggle('open'));
