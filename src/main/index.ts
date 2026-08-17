@@ -1,5 +1,22 @@
-import { app, BrowserWindow, session } from 'electron';
+import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
+import { IPC, PlaybackState, TrackInfo } from '../shared/types';
+
+const playback: PlaybackState = {
+  track: null,
+  currentTime: 0,
+  isPlaying: false,
+};
+
+ipcMain.on(IPC.TrackChanged, (_e, track: TrackInfo | null) => {
+  playback.track = track;
+  if (process.env.YTM_DEBUG) console.log('[track]', track?.title, '—', track?.artist);
+});
+
+ipcMain.on(IPC.PlaybackTick, (_e, tick: { currentTime: number; isPlaying: boolean }) => {
+  playback.currentTime = tick.currentTime;
+  playback.isPlaying = tick.isPlaying;
+});
 
 const YTM_URL = 'https://music.youtube.com';
 const CHROME_UA =
