@@ -12,10 +12,29 @@ export interface PlaybackState {
   isPlaying: boolean;
 }
 
+export interface SyncedLine {
+  time: number;
+  text: string;
+}
+
+export interface OverlayLyrics {
+  track: TrackInfo | null;
+  synced: SyncedLine[] | null;
+  plain: string | null;
+  status: 'loading' | 'ready' | 'not-found' | 'idle';
+}
+
+export interface OverlayTick {
+  currentTime: number;
+  isPlaying: boolean;
+}
+
 export const IPC = {
   TrackChanged: 'ytm:track-changed',
   PlaybackTick: 'ytm:playback-tick',
   MediaControl: 'ytm:media-control',
+  OverlayLyrics: 'ytm:overlay-lyrics',
+  OverlayTick: 'ytm:overlay-tick',
 } as const;
 
 export type MediaControl = 'play-pause' | 'next' | 'previous';

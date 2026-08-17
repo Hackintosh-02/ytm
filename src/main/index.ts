@@ -1,9 +1,10 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
-import { IPC, MediaControl, PlaybackState, TrackInfo } from '../shared/types';
+import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
-import { toggleOverlay } from './overlayWindow';
+import { getOverlay, toggleOverlay } from './overlayWindow';
+import { fetchLyrics } from './lyrics';
 
 const playback: PlaybackState = {
   track: null,
@@ -11,15 +12,50 @@ const playback: PlaybackState = {
   isPlaying: false,
 };
 
+let currentLyrics: OverlayLyrics = { track: null, synced: null, plain: null, status: 'idle' };
+let lyricsToken = 0;
+
+function sendOverlayLyrics() {
+  const win = getOverlay();
+  win?.webContents.send(IPC.OverlayLyrics, currentLyrics);
+}
+
+async function refreshLyricsFor(track: TrackInfo) {
+  const token = ++lyricsToken;
+  currentLyrics = { track, synced: null, plain: null, status: 'loading' };
+  sendOverlayLyrics();
+  const result = await fetchLyrics(track);
+  if (token !== lyricsToken) return; // song already changed
+  currentLyrics = {
+    track,
+    synced: result.synced,
+    plain: result.plain,
+    status: result.synced || result.plain ? 'ready' : 'not-found',
+  };
+  sendOverlayLyrics();
+}
+
 ipcMain.on(IPC.TrackChanged, (_e, track: TrackInfo | null) => {
   playback.track = track;
   if (process.env.YTM_DEBUG) console.log('[track]', track?.title, '—', track?.artist);
+  if (track && track.title) {
+    void refreshLyricsFor(track);
+  } else {
+    lyricsToken++;
+    currentLyrics = { track: null, synced: null, plain: null, status: 'idle' };
+    sendOverlayLyrics();
+  }
 });
 
 ipcMain.on(IPC.PlaybackTick, (_e, tick: { currentTime: number; isPlaying: boolean }) => {
   playback.currentTime = tick.currentTime;
   playback.isPlaying = tick.isPlaying;
+  const win = getOverlay();
+  win?.webContents.send(IPC.OverlayTick, tick);
 });
+
+// Push current lyrics when the overlay opens or reloads.
+ipcMain.on('ytm:overlay-ready', () => sendOverlayLyrics());
 
 const YTM_URL = 'https://music.youtube.com';
 const CHROME_UA =
