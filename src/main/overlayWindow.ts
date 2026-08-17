@@ -1,25 +1,43 @@
 import { BrowserWindow, screen } from 'electron';
 import * as path from 'path';
+import { OverlaySettings, loadSettings, saveSettings } from './settings';
 
 let overlay: BrowserWindow | null = null;
+let settings: OverlaySettings = loadSettings();
 
 export function getOverlay(): BrowserWindow | null {
   return overlay && !overlay.isDestroyed() ? overlay : null;
+}
+
+export function getOverlaySettings(): OverlaySettings {
+  return settings;
+}
+
+export function updateOverlaySettings(patch: Partial<OverlaySettings>) {
+  settings = { ...settings, ...patch };
+  saveSettings(settings);
+}
+
+function defaultBounds() {
+  const { workArea } = screen.getPrimaryDisplay();
+  const width = 420;
+  const height = 260;
+  return {
+    width,
+    height,
+    x: workArea.x + workArea.width - width - 24,
+    y: workArea.y + 24,
+  };
 }
 
 export function createOverlay(): BrowserWindow {
   const existing = getOverlay();
   if (existing) return existing;
 
-  const { workArea } = screen.getPrimaryDisplay();
-  const width = 420;
-  const height = 220;
+  const bounds = settings.bounds ?? defaultBounds();
 
   overlay = new BrowserWindow({
-    width,
-    height,
-    x: workArea.x + workArea.width - width - 24,
-    y: workArea.y + 24,
+    ...bounds,
     frame: false,
     transparent: true,
     hasShadow: false,
@@ -42,6 +60,14 @@ export function createOverlay(): BrowserWindow {
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   overlay.loadFile(path.join(__dirname, '../renderer/overlay/index.html'));
+
+  const persistBounds = () => {
+    if (!overlay || overlay.isDestroyed()) return;
+    const b = overlay.getBounds();
+    updateOverlaySettings({ bounds: b });
+  };
+  overlay.on('move', persistBounds);
+  overlay.on('resize', persistBounds);
 
   overlay.on('closed', () => {
     overlay = null;

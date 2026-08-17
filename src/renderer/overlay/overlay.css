@@ -10,7 +10,7 @@ html, body {
   cursor: default;
 }
 body {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, var(--bg-opacity, 0.55));
   border-radius: 12px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -33,7 +33,7 @@ body {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
-  font-size: 18px;
+  font-size: var(--font-size, 18px);
   line-height: 1.5;
   text-align: center;
 }
@@ -48,3 +48,48 @@ body {
   font-weight: 600;
   transform: scale(1.03);
 }
+
+#controls {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+body:hover #controls { opacity: 0.85; }
+#controls button {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+#controls button:hover { background: rgba(255,255,255,0.22); }
+
+#panel {
+  position: absolute;
+  top: 30px;
+  right: 8px;
+  background: rgba(20,20,20,0.92);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  -webkit-app-region: no-drag;
+  min-width: 180px;
+}
+#panel.open { display: flex; }
+#panel label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+#panel input[type=range] { flex: 1; }

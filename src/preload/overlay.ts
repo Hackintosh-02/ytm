@@ -8,6 +8,12 @@ contextBridge.exposeInMainWorld('overlayAPI', {
   onTick(cb: (tick: OverlayTick) => void) {
     ipcRenderer.on(IPC.OverlayTick, (_e, t: OverlayTick) => cb(t));
   },
+  onSettings(cb: (s: any) => void) {
+    ipcRenderer.on(IPC.OverlaySettings, (_e, s: any) => cb(s));
+  },
+  updateSettings(patch: any) {
+    ipcRenderer.send(IPC.OverlaySettingsUpdate, patch);
+  },
   ready() {
     ipcRenderer.send('ytm:overlay-ready');
   },

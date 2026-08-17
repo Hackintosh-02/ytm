@@ -3,7 +3,7 @@ import * as path from 'path';
 import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
-import { getOverlay, toggleOverlay } from './overlayWindow';
+import { getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
 import { fetchLyrics } from './lyrics';
 
 const playback: PlaybackState = {
@@ -54,8 +54,18 @@ ipcMain.on(IPC.PlaybackTick, (_e, tick: { currentTime: number; isPlaying: boolea
   win?.webContents.send(IPC.OverlayTick, tick);
 });
 
-// Push current lyrics when the overlay opens or reloads.
-ipcMain.on('ytm:overlay-ready', () => sendOverlayLyrics());
+// Push current lyrics + settings when the overlay opens or reloads.
+ipcMain.on('ytm:overlay-ready', () => {
+  sendOverlayLyrics();
+  const win = getOverlay();
+  win?.webContents.send(IPC.OverlaySettings, getOverlaySettings());
+});
+
+ipcMain.on(IPC.OverlaySettingsUpdate, (_e, patch: any) => {
+  updateOverlaySettings(patch);
+  const win = getOverlay();
+  win?.webContents.send(IPC.OverlaySettings, getOverlaySettings());
+});
 
 const YTM_URL = 'https://music.youtube.com';
 const CHROME_UA =

@@ -35,6 +35,8 @@ export const IPC = {
   MediaControl: 'ytm:media-control',
   OverlayLyrics: 'ytm:overlay-lyrics',
   OverlayTick: 'ytm:overlay-tick',
+  OverlaySettings: 'ytm:overlay-settings',
+  OverlaySettingsUpdate: 'ytm:overlay-settings-update',
 } as const;
 
 export type MediaControl = 'play-pause' | 'next' | 'previous';
