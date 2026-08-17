@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export interface OverlaySettings {
+  enabled: boolean; // whether the overlay is shown at all
   fontSize: number;
   opacity: number; // 0..1 background darkness
   offset: number;  // seconds; positive = lyrics later
@@ -10,6 +11,7 @@ export interface OverlaySettings {
 }
 
 const DEFAULTS: OverlaySettings = {
+  enabled: false,
   fontSize: 18,
   opacity: 0.55,
   offset: 0,

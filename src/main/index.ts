@@ -4,7 +4,7 @@ import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../s
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
 import { buildAppMenu } from './appMenu';
-import { createOverlay, getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
+import { getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
 import { fetchLyrics } from './lyrics';
 
 const playback: PlaybackState = {
@@ -136,6 +136,20 @@ function createMainWindow(): BrowserWindow {
     }
   });
 
+  // Fix black-screen after exiting native fullscreen: Electron/Chromium
+  // sometimes fails to repaint the webContents when the window transitions
+  // back from full-screen. Force a redraw via a tiny resize round-trip and
+  // an invalidate on the webContents.
+  win.on('leave-full-screen', () => {
+    setTimeout(() => {
+      if (win.isDestroyed()) return;
+      const b = win.getBounds();
+      win.setBounds({ ...b, width: b.width - 1 });
+      win.setBounds(b);
+      win.webContents.invalidate();
+    }, 100);
+  });
+
   return win;
 }
 
@@ -183,9 +197,9 @@ if (!gotLock) {
       quit: () => app.quit(),
     });
     registerMediaKeys(sendMediaControl);
-    // Open the lyrics overlay by default so users see the feature on first
-    // launch. They can hide it from the tray afterward.
-    createOverlay();
+    // Overlay is opt-in — user enables from tray / Cmd+Shift+L. Only auto-open
+    // if it was enabled in a previous session.
+    if (getOverlaySettings().enabled) toggleOverlay();
     app.on('activate', () => showMainWindow());
   });
 
