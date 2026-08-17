@@ -1,24 +1,37 @@
-import type { OverlayLyrics, OverlayTick, SyncedLine } from '../../shared/types';
+// NOTE: This file is loaded as a plain <script> tag, not a module. It must
+// stay free of top-level import/export syntax, otherwise tsc emits CommonJS
+// boilerplate (Object.defineProperty(exports, ...)) that blows up at runtime
+// with "exports is not defined". Types are declared inline for the same
+// reason.
 
-interface OverlaySettings {
-  fontSize: number;
-  opacity: number;
-  offset: number;
+interface RTrack {
+  title: string;
+  artist: string;
+  album: string;
+  artwork: string | null;
+  duration: number;
 }
-
-declare global {
-  interface Window {
-    overlayAPI: {
-      onLyrics(cb: (l: OverlayLyrics) => void): void;
-      onTick(cb: (t: OverlayTick) => void): void;
-      onSettings(cb: (s: OverlaySettings) => void): void;
-      updateSettings(patch: Partial<OverlaySettings>): void;
-      ready(): void;
-    };
-  }
+interface RSyncedLine { time: number; text: string }
+interface ROverlayLyrics {
+  track: RTrack | null;
+  synced: RSyncedLine[] | null;
+  plain: string | null;
+  status: 'loading' | 'ready' | 'not-found' | 'idle';
 }
+interface ROverlayTick { currentTime: number; isPlaying: boolean }
+interface ROverlaySettings { fontSize: number; opacity: number; offset: number }
 
-console.log('[overlay-renderer] loaded, overlayAPI=', typeof window.overlayAPI);
+interface OverlayAPI {
+  onLyrics(cb: (l: ROverlayLyrics) => void): void;
+  onTick(cb: (t: ROverlayTick) => void): void;
+  onSettings(cb: (s: ROverlaySettings) => void): void;
+  updateSettings(patch: Partial<ROverlaySettings>): void;
+  ready(): void;
+}
+declare const overlayAPI: OverlayAPI;
+
+console.log('[overlay-renderer] loaded, overlayAPI=', typeof (window as any).overlayAPI);
+
 const statusEl = document.getElementById('status') as HTMLElement;
 const lyricsEl = document.getElementById('lyrics') as HTMLElement;
 const btnSettings = document.getElementById('btn-settings') as HTMLButtonElement;
@@ -28,13 +41,13 @@ const inOpacity = document.getElementById('in-opacity') as HTMLInputElement;
 const inOffset = document.getElementById('in-offset') as HTMLInputElement;
 const offsetReadout = document.getElementById('offset-readout') as HTMLElement;
 
-let current: OverlayLyrics = { track: null, synced: null, plain: null, status: 'idle' };
+let current: ROverlayLyrics = { track: null, synced: null, plain: null, status: 'idle' };
 let currentTime = 0;
 let offset = 0;
 let lineEls: HTMLDivElement[] = [];
 let activeIdx = -1;
 
-function applySettings(s: OverlaySettings) {
+function applySettings(s: ROverlaySettings) {
   document.body.style.setProperty('--font-size', `${s.fontSize}px`);
   document.body.style.setProperty('--bg-opacity', String(s.opacity));
   offset = s.offset;
@@ -78,7 +91,7 @@ function render() {
   }
 }
 
-function findActiveIndex(lines: SyncedLine[], t: number): number {
+function findActiveIndex(lines: RSyncedLine[], t: number): number {
   let lo = 0, hi = lines.length - 1, ans = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
@@ -104,9 +117,10 @@ function syncHighlight() {
 
 btnSettings.addEventListener('click', () => panel.classList.toggle('open'));
 
-function pushSetting(patch: Partial<OverlaySettings>) {
-  window.overlayAPI.updateSettings(patch);
-  // Optimistically apply locally so drag feels responsive
+const api = (window as any).overlayAPI as OverlayAPI | undefined;
+
+function pushSetting(patch: Partial<ROverlaySettings>) {
+  api?.updateSettings(patch);
   applySettings({
     fontSize: parseFloat(inFont.value),
     opacity: parseFloat(inOpacity.value),
@@ -119,24 +133,20 @@ inFont.addEventListener('input', () => pushSetting({ fontSize: parseFloat(inFont
 inOpacity.addEventListener('input', () => pushSetting({ opacity: parseFloat(inOpacity.value) }));
 inOffset.addEventListener('input', () => pushSetting({ offset: parseFloat(inOffset.value) }));
 
-if (!window.overlayAPI) {
+if (!api) {
   statusEl.textContent = 'overlayAPI missing — preload did not load';
 } else {
-  window.overlayAPI.onLyrics((l) => {
+  api.onLyrics((l) => {
     console.log('[overlay-renderer] lyrics', l.status, l.track?.title);
     current = l;
     render();
     syncHighlight();
   });
-
-  window.overlayAPI.onTick((tick) => {
+  api.onTick((tick) => {
     currentTime = tick.currentTime;
     syncHighlight();
   });
-
-  window.overlayAPI.onSettings((s) => applySettings(s));
-
+  api.onSettings((s) => applySettings(s));
   render();
-  window.overlayAPI.ready();
+  api.ready();
 }
-export {};
