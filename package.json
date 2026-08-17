@@ -1,6 +1,6 @@
 {
   "name": "ytm-desktop",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Unofficial YouTube Music desktop app with a floating lyrics overlay",
   "main": "dist/main/index.js",
   "author": "Hackintosh-02",
