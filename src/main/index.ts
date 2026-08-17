@@ -97,6 +97,11 @@ function createMainWindow(): BrowserWindow {
 
   win.loadURL(YTM_URL, { userAgent: CHROME_UA });
 
+  // Open DevTools in dev builds so preload logs are visible while debugging.
+  if (!app.isPackaged) {
+    win.webContents.openDevTools({ mode: 'detach' });
+  }
+
   // On macOS, closing the window hides it rather than quitting. The user
   // reopens from the dock or Cmd+Tab. Full quit goes through Cmd+Q.
   win.on('close', (event) => {
