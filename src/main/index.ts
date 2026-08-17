@@ -136,18 +136,22 @@ function createMainWindow(): BrowserWindow {
     }
   });
 
-  // Fix black-screen after exiting native fullscreen: Electron/Chromium
-  // sometimes fails to repaint the webContents when the window transitions
-  // back from full-screen. Force a redraw via a tiny resize round-trip and
-  // an invalidate on the webContents.
+  // Fix black-screen after exiting native fullscreen on macOS. When the
+  // window animates back out of its own Space, Chromium sometimes drops the
+  // frame and the window paints solid black. A resize+invalidate is not
+  // enough — the reliable fix is to hide the window and re-show it, which
+  // forces AppKit to reattach the content view. Wrapped in setTimeout so
+  // the fullscreen transition animation has finished.
   win.on('leave-full-screen', () => {
     setTimeout(() => {
-      if (win.isDestroyed()) return;
-      const b = win.getBounds();
-      win.setBounds({ ...b, width: b.width - 1 });
-      win.setBounds(b);
-      win.webContents.invalidate();
-    }, 100);
+      if (win.isDestroyed() || !win.isVisible()) return;
+      win.hide();
+      setTimeout(() => {
+        if (win.isDestroyed()) return;
+        win.show();
+        win.webContents.invalidate();
+      }, 50);
+    }, 200);
   });
 
   return win;
