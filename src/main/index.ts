@@ -3,7 +3,7 @@ import * as path from 'path';
 import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
-import { getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
+import { createOverlay, getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
 import { fetchLyrics } from './lyrics';
 
 const playback: PlaybackState = {
@@ -141,6 +141,9 @@ if (!gotLock) {
       quit: () => app.quit(),
     });
     registerMediaKeys(sendMediaControl);
+    // Open the lyrics overlay by default so users see the feature on first
+    // launch. They can hide it from the tray afterward.
+    createOverlay();
     app.on('activate', () => showMainWindow());
   });
 
