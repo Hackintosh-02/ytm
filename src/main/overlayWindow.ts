@@ -86,17 +86,11 @@ export function createOverlay(): BrowserWindow {
 export function toggleOverlay() {
   const win = getOverlay();
   if (!win) {
-    updateOverlaySettings({ enabled: true });
     createOverlay();
     return;
   }
-  if (win.isVisible()) {
-    win.hide();
-    updateOverlaySettings({ enabled: false });
-  } else {
-    win.show();
-    updateOverlaySettings({ enabled: true });
-  }
+  if (win.isVisible()) win.hide();
+  else win.show();
 }
 
 // Force-destroy the overlay before quit. A screen-saver-level +

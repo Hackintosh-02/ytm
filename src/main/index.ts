@@ -206,9 +206,9 @@ if (!gotLock) {
       quit: () => app.quit(),
     });
     registerMediaKeys(sendMediaControl);
-    // Overlay is opt-in — user enables from tray / Cmd+Shift+L. Only auto-open
-    // if it was enabled in a previous session.
-    if (getOverlaySettings().enabled) toggleOverlay();
+    // Overlay never auto-opens. User toggles it from the tray menu, Lyrics
+    // menu, or Cmd+Shift+L for the current session. This keeps launch quiet
+    // and predictable — no surprise floating window every time.
     app.on('activate', () => showMainWindow());
   });
 
