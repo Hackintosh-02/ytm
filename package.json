@@ -1,6 +1,6 @@
 {
   "name": "ytm-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial YouTube Music desktop app with a floating lyrics overlay",
   "main": "dist/main/index.js",
   "author": "Hackintosh-02",
@@ -37,7 +37,13 @@
     "mac": {
       "category": "public.app-category.music",
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.png",
       "identity": null,
@@ -48,11 +54,16 @@
       "sign": false
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "build/icon.png"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Audio",
       "icon": "build/icon.png"
     }
