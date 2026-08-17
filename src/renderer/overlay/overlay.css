@@ -18,11 +18,12 @@ body {
   flex-direction: column;
   padding: 14px 18px;
   box-sizing: border-box;
-}
-#drag-handle {
+  /* Whole overlay is draggable; interactive elements below opt back out. */
   -webkit-app-region: drag;
-  height: 20px;
-  margin: -14px -18px 4px -18px;
+}
+#drag-handle { display: none; }
+#lyrics, #controls, #controls button, #panel, #panel * {
+  -webkit-app-region: no-drag;
 }
 #status {
   font-size: 12px;

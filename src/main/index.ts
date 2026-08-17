@@ -3,6 +3,7 @@ import * as path from 'path';
 import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
+import { buildAppMenu } from './appMenu';
 import { createOverlay, getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
 import { fetchLyrics } from './lyrics';
 
@@ -137,6 +138,18 @@ if (!gotLock) {
   app.on('second-instance', () => showMainWindow());
 
   app.whenReady().then(() => {
+    app.setName('YTM Desktop');
+    buildAppMenu();
+    // In dev the dock/menubar shows generic Electron branding. Point the
+    // dock icon at our real app icon so the running app is identifiable.
+    if (isMac && !app.isPackaged) {
+      try {
+        const iconPath = path.join(__dirname, '../../build/icon.png');
+        app.dock?.setIcon(iconPath);
+      } catch {
+        // best-effort; not critical
+      }
+    }
     mainWindow = createMainWindow();
     initTray({
       playback,
