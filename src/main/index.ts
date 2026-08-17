@@ -132,12 +132,16 @@ function createMainWindow(): BrowserWindow {
     win.webContents.openDevTools({ mode: 'detach' });
   }
 
-  // On macOS, closing the window hides it rather than quitting. The user
-  // reopens from the dock or Cmd+Tab. Full quit goes through Cmd+Q.
+  // Red X on the main window fully quits the app. This is the behavior
+  // the user expects: one close action tears down main + overlay + tray in
+  // one step, rather than leaving a confusing hidden-window-plus-tray-plus-
+  // overlay state alive. Route through app.quit() so the before-quit /
+  // will-quit teardown (destroyOverlay + destroyTray + unregister keys)
+  // runs cleanly.
   win.on('close', (event) => {
-    if (isMac && !isQuitting) {
+    if (!isQuitting) {
       event.preventDefault();
-      win.hide();
+      app.quit();
     }
   });
 
@@ -228,6 +232,6 @@ if (!gotLock) {
   });
 
   app.on('window-all-closed', () => {
-    if (!isMac) app.quit();
+    app.quit();
   });
 }
