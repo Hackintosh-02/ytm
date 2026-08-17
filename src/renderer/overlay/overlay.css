@@ -1,0 +1,48 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  color: #ffffff;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+body {
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+#drag-handle {
+  -webkit-app-region: drag;
+  height: 20px;
+  margin: -14px -18px 4px -18px;
+}
+#status {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+#lyrics {
+  flex: 1;
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: center;
+}
+.line {
+  opacity: 0.35;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  padding: 2px 0;
+}
+.line.active {
+  opacity: 1;
+  font-weight: 600;
+  transform: scale(1.03);
+}

@@ -3,6 +3,7 @@ import * as path from 'path';
 import { IPC, MediaControl, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
+import { toggleOverlay } from './overlayWindow';
 
 const playback: PlaybackState = {
   track: null,
@@ -90,9 +91,7 @@ if (!gotLock) {
       playback,
       showMain: showMainWindow,
       sendControl: sendMediaControl,
-      toggleOverlay: () => {
-        // Overlay window is introduced in a later commit.
-      },
+      toggleOverlay,
       quit: () => app.quit(),
     });
     registerMediaKeys(sendMediaControl);

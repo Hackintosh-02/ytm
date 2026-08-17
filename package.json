@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.js",
     "start": "npm run build && electron .",
     "dev": "npm run start",
     "pack": "npm run build && electron-builder --dir",
