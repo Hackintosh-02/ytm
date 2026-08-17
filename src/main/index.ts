@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
-import { IPC, PlaybackState, TrackInfo } from '../shared/types';
+import { IPC, MediaControl, PlaybackState, TrackInfo } from '../shared/types';
+import { initTray } from './tray';
 
 const playback: PlaybackState = {
   track: null,
@@ -60,6 +61,12 @@ function createMainWindow(): BrowserWindow {
   return win;
 }
 
+function sendMediaControl(cmd: MediaControl) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IPC.MediaControl, cmd);
+  }
+}
+
 function showMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) {
     mainWindow = createMainWindow();
@@ -78,6 +85,15 @@ if (!gotLock) {
 
   app.whenReady().then(() => {
     mainWindow = createMainWindow();
+    initTray({
+      playback,
+      showMain: showMainWindow,
+      sendControl: sendMediaControl,
+      toggleOverlay: () => {
+        // Overlay window is introduced in a later commit.
+      },
+      quit: () => app.quit(),
+    });
     app.on('activate', () => showMainWindow());
   });
 
