@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
 import { IPC, MediaControl, PlaybackState, TrackInfo } from '../shared/types';
 import { initTray } from './tray';
+import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
 
 const playback: PlaybackState = {
   track: null,
@@ -94,8 +95,11 @@ if (!gotLock) {
       },
       quit: () => app.quit(),
     });
+    registerMediaKeys(sendMediaControl);
     app.on('activate', () => showMainWindow());
   });
+
+  app.on('will-quit', () => unregisterMediaKeys());
 
   app.on('before-quit', () => {
     isQuitting = true;
