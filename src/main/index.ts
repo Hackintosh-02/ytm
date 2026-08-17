@@ -98,8 +98,8 @@ function createMainWindow(): BrowserWindow {
 
   win.loadURL(YTM_URL, { userAgent: CHROME_UA });
 
-  // Open DevTools in dev builds so preload logs are visible while debugging.
-  if (!app.isPackaged) {
+  // Open DevTools only when explicitly debugging.
+  if (process.env.YTM_DEBUG) {
     win.webContents.openDevTools({ mode: 'detach' });
   }
 

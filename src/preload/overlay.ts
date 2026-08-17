@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC, OverlayLyrics, OverlayTick } from '../shared/types';
 
+contextBridge.exposeInMainWorld('ytmDebug', !!process.env.YTM_DEBUG);
+
 contextBridge.exposeInMainWorld('overlayAPI', {
   onLyrics(cb: (lyrics: OverlayLyrics) => void) {
     ipcRenderer.on(IPC.OverlayLyrics, (_e, l: OverlayLyrics) => cb(l));

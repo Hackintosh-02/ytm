@@ -30,7 +30,8 @@ interface OverlayAPI {
 }
 declare const overlayAPI: OverlayAPI;
 
-console.log('[overlay-renderer] loaded, overlayAPI=', typeof (window as any).overlayAPI);
+const DEBUG = (window as any).ytmDebug === true;
+if (DEBUG) console.log('[overlay-renderer] loaded, overlayAPI=', typeof (window as any).overlayAPI);
 
 const statusEl = document.getElementById('status') as HTMLElement;
 const lyricsEl = document.getElementById('lyrics') as HTMLElement;
@@ -149,7 +150,7 @@ if (!api) {
   statusEl.textContent = 'overlayAPI missing — preload did not load';
 } else {
   api.onLyrics((l) => {
-    console.log('[overlay-renderer] lyrics', l.status, l.track?.title);
+    if (DEBUG) console.log('[overlay-renderer] lyrics', l.status, l.track?.title);
     current = l;
     render();
     syncHighlight();

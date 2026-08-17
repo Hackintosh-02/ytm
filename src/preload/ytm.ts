@@ -1,6 +1,11 @@
 import { ipcRenderer } from 'electron';
 import { IPC, MediaControl, TrackInfo } from '../shared/types';
 
+// Preload runs in the sandboxed page; process.env is not available for
+// arbitrary vars, but process.env.YTM_DEBUG is, since it was set at Electron
+// launch. Fall back to false in packaged builds.
+const DEBUG = !!process.env.YTM_DEBUG;
+
 // Runs in the YTM page context. Polls mediaSession + DOM + the video element
 // to emit track-change and periodic playback ticks to the main process.
 
@@ -64,12 +69,9 @@ function tick() {
 
   if (key !== lastKey) {
     lastKey = key;
-    // eslint-disable-next-line no-console
-    console.log('[ytm-preload] track changed →', track);
+    if (DEBUG) console.log('[ytm-preload] track changed →', track);
     ipcRenderer.send(IPC.TrackChanged, track);
-  } else if (logCount++ % 20 === 0) {
-    // Heartbeat every ~5s so we can see whether the preload is running
-    // eslint-disable-next-line no-console
+  } else if (DEBUG && logCount++ % 20 === 0) {
     console.log('[ytm-preload] tick, track=', track?.title ?? '(none)', 'video=', !!video);
   }
 
@@ -80,7 +82,7 @@ function tick() {
 }
 
 function start() {
-  console.log('[ytm-preload] loaded, starting poll');
+  if (DEBUG) console.log('[ytm-preload] loaded, starting poll');
   setInterval(tick, 250);
 }
 
