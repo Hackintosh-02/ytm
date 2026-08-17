@@ -5,7 +5,9 @@ const YTM_URL = 'https://music.youtube.com';
 const CHROME_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 
+const isMac = process.platform === 'darwin';
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
 
 function createMainWindow(): BrowserWindow {
   const ytmSession = session.fromPartition('persist:ytm');
@@ -28,19 +30,45 @@ function createMainWindow(): BrowserWindow {
   });
 
   win.loadURL(YTM_URL, { userAgent: CHROME_UA });
+
+  // On macOS, closing the window hides it rather than quitting. The user
+  // reopens from the dock or Cmd+Tab. Full quit goes through Cmd+Q.
+  win.on('close', (event) => {
+    if (isMac && !isQuitting) {
+      event.preventDefault();
+      win.hide();
+    }
+  });
+
   return win;
 }
 
-app.whenReady().then(() => {
-  mainWindow = createMainWindow();
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createMainWindow();
+    return;
+  }
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createMainWindow();
-    }
+// Prevent multiple app instances — second launch focuses the existing window.
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => showMainWindow());
+
+  app.whenReady().then(() => {
+    mainWindow = createMainWindow();
+    app.on('activate', () => showMainWindow());
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.on('before-quit', () => {
+    isQuitting = true;
+  });
+
+  app.on('window-all-closed', () => {
+    if (!isMac) app.quit();
+  });
+}
