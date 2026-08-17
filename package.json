@@ -1,0 +1,55 @@
+{
+  "name": "ytm-desktop",
+  "version": "0.1.0",
+  "description": "Unofficial YouTube Music desktop app with a floating lyrics overlay",
+  "main": "dist/main/index.js",
+  "author": "Hackintosh-02",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "npm run build && electron .",
+    "dev": "npm run start",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "com.hackintosh.ytm-desktop",
+    "productName": "YTM Desktop",
+    "asar": true,
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "icon": "build/icon.icns",
+      "identity": null
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Audio",
+      "icon": "build/icon.png"
+    }
+  }
+}
