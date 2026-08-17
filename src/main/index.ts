@@ -81,21 +81,25 @@ function createMainWindow(): BrowserWindow {
   ytmSession.setUserAgent(CHROME_UA);
 
   // Google's OAuth ("Couldn't sign you in — This browser or app may not be
-  // secure") relies on Sec-CH-UA client-hint headers to detect embedded
-  // browsers. Strip those headers on requests to Google auth endpoints so
-  // the request looks like a plain Chrome browser.
+  // secure") rejects spoofed Chrome UAs because the accompanying Sec-CH-UA
+  // client hints do not match a real Chrome build — but it accepts the raw
+  // Electron UA. So: use CHROME_UA for YTM itself (needed for feature
+  // detection), but on requests to accounts.google.com send the native
+  // Electron UA and strip the fake Chrome client hints. This is the same
+  // trick th-ch/youtube-music uses.
+  const ELECTRON_UA = ytmSession.getUserAgent().includes('Electron')
+    ? ytmSession.getUserAgent()
+    : `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) YTMDesktop/${app.getVersion()} Electron/${process.versions.electron} Safari/537.36`;
+
   ytmSession.webRequest.onBeforeSendHeaders((details, cb) => {
     const url = details.url;
-    const isAuth =
-      url.includes('accounts.google.com') ||
-      url.includes('accounts.youtube.com') ||
-      url.includes('myaccount.google.com');
+    const isGoogleAuth = url.startsWith('https://accounts.google.com');
     const headers = { ...details.requestHeaders };
-    if (isAuth) {
+    if (isGoogleAuth) {
       for (const key of Object.keys(headers)) {
         if (/^sec-ch-ua/i.test(key)) delete headers[key];
       }
-      headers['User-Agent'] = CHROME_UA;
+      headers['User-Agent'] = ELECTRON_UA;
     }
     cb({ requestHeaders: headers });
   });
