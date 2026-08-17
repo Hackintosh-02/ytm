@@ -1,10 +1,10 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron';
 import * as path from 'path';
 import { IPC, MediaControl, OverlayLyrics, PlaybackState, TrackInfo } from '../shared/types';
-import { initTray } from './tray';
+import { destroyTray, initTray } from './tray';
 import { registerMediaKeys, unregisterMediaKeys } from './mediaKeys';
 import { buildAppMenu } from './appMenu';
-import { getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
+import { destroyOverlay, getOverlay, getOverlaySettings, toggleOverlay, updateOverlaySettings } from './overlayWindow';
 import { fetchLyrics } from './lyrics';
 
 const playback: PlaybackState = {
@@ -122,6 +122,11 @@ function createMainWindow(): BrowserWindow {
 
   win.loadURL(YTM_URL, { userAgent: CHROME_UA });
 
+  // Prevent a stray beforeunload handler in the YTM page from silently
+  // cancelling app.quit(). This is one of the top causes of "Cmd+Q does
+  // nothing" in Electron apps that wrap third-party sites.
+  win.webContents.on('will-prevent-unload', (e) => e.preventDefault());
+
   // Open DevTools only when explicitly debugging.
   if (process.env.YTM_DEBUG) {
     win.webContents.openDevTools({ mode: 'detach' });
@@ -138,16 +143,16 @@ function createMainWindow(): BrowserWindow {
 
   // Fix black-screen after exiting native fullscreen on macOS. When the
   // window animates back out of its own Space, Chromium sometimes drops the
-  // frame and the window paints solid black. A resize+invalidate is not
-  // enough — the reliable fix is to hide the window and re-show it, which
-  // forces AppKit to reattach the content view. Wrapped in setTimeout so
-  // the fullscreen transition animation has finished.
+  // frame and the window paints solid black. Reliable fix: hide + re-show
+  // after the transition animation, which forces AppKit to reattach the
+  // content view. Suppress during quit so we do not fight the shutdown.
   win.on('leave-full-screen', () => {
+    if (isQuitting) return;
     setTimeout(() => {
-      if (win.isDestroyed() || !win.isVisible()) return;
+      if (isQuitting || win.isDestroyed() || !win.isVisible()) return;
       win.hide();
       setTimeout(() => {
-        if (win.isDestroyed()) return;
+        if (isQuitting || win.isDestroyed()) return;
         win.show();
         win.webContents.invalidate();
       }, 50);
@@ -207,10 +212,19 @@ if (!gotLock) {
     app.on('activate', () => showMainWindow());
   });
 
-  app.on('will-quit', () => unregisterMediaKeys());
-
   app.on('before-quit', () => {
     isQuitting = true;
+    // Explicitly tear down the overlay first. A frameless transparent
+    // window at screen-saver level with visibleOnAllWorkspaces is not
+    // torn down reliably by the default quit sequence — destroy() bypasses
+    // any close-event handling so quit cannot hang here.
+    destroyOverlay();
+  });
+
+  app.on('will-quit', () => {
+    unregisterMediaKeys();
+    // Remove tray last so no ghost icon lingers in the menubar.
+    destroyTray();
   });
 
   app.on('window-all-closed', () => {

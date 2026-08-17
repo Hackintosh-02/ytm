@@ -98,3 +98,18 @@ export function toggleOverlay() {
     updateOverlaySettings({ enabled: true });
   }
 }
+
+// Force-destroy the overlay before quit. A screen-saver-level +
+// visibleOnAllWorkspaces window is not always torn down by app.quit()
+// reliably; drop those flags first, then destroy() (which cannot be
+// preventDefault'd, unlike close()).
+export function destroyOverlay() {
+  const win = getOverlay();
+  if (!win) return;
+  try {
+    win.setAlwaysOnTop(false);
+    win.setVisibleOnAllWorkspaces(false);
+  } catch { /* ignore */ }
+  win.destroy();
+  overlay = null;
+}

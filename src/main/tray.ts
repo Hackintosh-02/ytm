@@ -4,6 +4,11 @@ import { IPC, MediaControl, PlaybackState } from '../shared/types';
 
 let tray: Tray | null = null;
 
+export function destroyTray() {
+  if (tray && !tray.isDestroyed()) tray.destroy();
+  tray = null;
+}
+
 function iconPath(): string {
   // In production the app is asar-packed; assets/ is copied alongside.
   return path.join(app.getAppPath(), 'assets', 'trayTemplate.png');
