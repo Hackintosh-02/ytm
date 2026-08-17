@@ -18,6 +18,7 @@ declare global {
   }
 }
 
+console.log('[overlay-renderer] loaded, overlayAPI=', typeof window.overlayAPI);
 const statusEl = document.getElementById('status') as HTMLElement;
 const lyricsEl = document.getElementById('lyrics') as HTMLElement;
 const btnSettings = document.getElementById('btn-settings') as HTMLButtonElement;
@@ -118,19 +119,24 @@ inFont.addEventListener('input', () => pushSetting({ fontSize: parseFloat(inFont
 inOpacity.addEventListener('input', () => pushSetting({ opacity: parseFloat(inOpacity.value) }));
 inOffset.addEventListener('input', () => pushSetting({ offset: parseFloat(inOffset.value) }));
 
-window.overlayAPI.onLyrics((l) => {
-  current = l;
+if (!window.overlayAPI) {
+  statusEl.textContent = 'overlayAPI missing — preload did not load';
+} else {
+  window.overlayAPI.onLyrics((l) => {
+    console.log('[overlay-renderer] lyrics', l.status, l.track?.title);
+    current = l;
+    render();
+    syncHighlight();
+  });
+
+  window.overlayAPI.onTick((tick) => {
+    currentTime = tick.currentTime;
+    syncHighlight();
+  });
+
+  window.overlayAPI.onSettings((s) => applySettings(s));
+
   render();
-  syncHighlight();
-});
-
-window.overlayAPI.onTick((tick) => {
-  currentTime = tick.currentTime;
-  syncHighlight();
-});
-
-window.overlayAPI.onSettings((s) => applySettings(s));
-
-render();
-window.overlayAPI.ready();
+  window.overlayAPI.ready();
+}
 export {};

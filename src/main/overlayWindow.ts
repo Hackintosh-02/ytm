@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import * as path from 'path';
 import { OverlaySettings, loadSettings, saveSettings } from './settings';
 
@@ -60,6 +60,13 @@ export function createOverlay(): BrowserWindow {
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   overlay.loadFile(path.join(__dirname, '../renderer/overlay/index.html'));
+
+  if (!app.isPackaged) {
+    overlay.webContents.openDevTools({ mode: 'detach' });
+  }
+  overlay.webContents.on('preload-error', (_e, preloadPath, err) => {
+    console.error('[overlay] preload-error at', preloadPath, err);
+  });
 
   const persistBounds = () => {
     if (!overlay || overlay.isDestroyed()) return;
