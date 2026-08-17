@@ -80,6 +80,26 @@ function createMainWindow(): BrowserWindow {
   const ytmSession = session.fromPartition('persist:ytm');
   ytmSession.setUserAgent(CHROME_UA);
 
+  // Google's OAuth ("Couldn't sign you in — This browser or app may not be
+  // secure") relies on Sec-CH-UA client-hint headers to detect embedded
+  // browsers. Strip those headers on requests to Google auth endpoints so
+  // the request looks like a plain Chrome browser.
+  ytmSession.webRequest.onBeforeSendHeaders((details, cb) => {
+    const url = details.url;
+    const isAuth =
+      url.includes('accounts.google.com') ||
+      url.includes('accounts.youtube.com') ||
+      url.includes('myaccount.google.com');
+    const headers = { ...details.requestHeaders };
+    if (isAuth) {
+      for (const key of Object.keys(headers)) {
+        if (/^sec-ch-ua/i.test(key)) delete headers[key];
+      }
+      headers['User-Agent'] = CHROME_UA;
+    }
+    cb({ requestHeaders: headers });
+  });
+
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
